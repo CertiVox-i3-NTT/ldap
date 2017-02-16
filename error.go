@@ -3,7 +3,7 @@ package ldap
 import (
 	"fmt"
 
-	"gopkg.in/asn1-ber.v1"
+	"../asn1-ber"
 )
 
 // LDAP Result Codes
@@ -56,7 +56,6 @@ const (
 	ErrorUnexpectedResponse = 205
 )
 
-// LDAPResultCodeMap contains string descriptions for LDAP error codes
 var LDAPResultCodeMap = map[uint8]string{
 	LDAPResultSuccess:                      "Success",
 	LDAPResultOperationsError:              "Operations Error",
@@ -97,23 +96,11 @@ var LDAPResultCodeMap = map[uint8]string{
 	LDAPResultObjectClassModsProhibited:    "Object Class Mods Prohibited",
 	LDAPResultAffectsMultipleDSAs:          "Affects Multiple DSAs",
 	LDAPResultOther:                        "Other",
-
-	ErrorNetwork:            "Newwork Error",
-	ErrorFilterCompile:      "Filter Compile Error",
-	ErrorFilterDecompile:    "Filter Decompile Error",
-	ErrorDebugging:          "Debugging Error",
-	ErrorUnexpectedMessage:  "Unexpected Message",
-	ErrorUnexpectedResponse: "Unexpected Response",
 }
 
 func getLDAPResultCode(packet *ber.Packet) (code uint8, description string) {
-	if packet == nil {
-		return ErrorUnexpectedResponse, "Empty packet"
-	} else if len(packet.Children) >= 2 {
+	if len(packet.Children) >= 2 {
 		response := packet.Children[1]
-		if response == nil {
-			return ErrorUnexpectedResponse, "Empty response in packet"
-		}
 		if response.ClassType == ber.ClassApplication && response.TagType == ber.TypeConstructed && len(response.Children) >= 3 {
 			// Children[1].Children[2] is the diagnosticMessage which is guaranteed to exist as seen here: https://tools.ietf.org/html/rfc4511#section-4.1.9
 			return uint8(response.Children[0].Value.(int64)), response.Children[2].Value.(string)
@@ -123,11 +110,8 @@ func getLDAPResultCode(packet *ber.Packet) (code uint8, description string) {
 	return ErrorNetwork, "Invalid packet format"
 }
 
-// Error holds LDAP error information
 type Error struct {
-	// Err is the underlying error
-	Err error
-	// ResultCode is the LDAP error code
+	Err        error
 	ResultCode uint8
 }
 
@@ -135,12 +119,10 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("LDAP Result Code %d %q: %s", e.ResultCode, LDAPResultCodeMap[e.ResultCode], e.Err.Error())
 }
 
-// NewError creates an LDAP error with the given code and underlying error
 func NewError(resultCode uint8, err error) error {
 	return &Error{ResultCode: resultCode, Err: err}
 }
 
-// IsErrorWithCode returns true if the given error is an LDAP error with the given result code
 func IsErrorWithCode(err error, desiredResultCode uint8) bool {
 	if err == nil {
 		return false

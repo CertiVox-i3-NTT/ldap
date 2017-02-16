@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"gopkg.in/asn1-ber.v1"
-	"gopkg.in/ldap.v2"
+	"../asn1-ber"
+	"../ldap"
 )
 
 type compileTest struct {

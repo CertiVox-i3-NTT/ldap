@@ -3,7 +3,7 @@ package ldap
 import (
 	"log"
 
-	"gopkg.in/asn1-ber.v1"
+	"../asn1-ber"
 )
 
 // debbuging type

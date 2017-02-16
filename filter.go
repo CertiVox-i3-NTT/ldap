@@ -12,10 +12,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"gopkg.in/asn1-ber.v1"
+	"../asn1-ber"
 )
 
-// Filter choices
 const (
 	FilterAnd             = 0
 	FilterOr              = 1
@@ -29,7 +28,6 @@ const (
 	FilterExtensibleMatch = 9
 )
 
-// FilterMap contains human readable descriptions of Filter choices
 var FilterMap = map[uint64]string{
 	FilterAnd:             "And",
 	FilterOr:              "Or",
@@ -43,21 +41,18 @@ var FilterMap = map[uint64]string{
 	FilterExtensibleMatch: "Extensible Match",
 }
 
-// SubstringFilter options
 const (
 	FilterSubstringsInitial = 0
 	FilterSubstringsAny     = 1
 	FilterSubstringsFinal   = 2
 )
 
-// FilterSubstringsMap contains human readable descriptions of SubstringFilter choices
 var FilterSubstringsMap = map[uint64]string{
 	FilterSubstringsInitial: "Substrings Initial",
 	FilterSubstringsAny:     "Substrings Any",
 	FilterSubstringsFinal:   "Substrings Final",
 }
 
-// MatchingRuleAssertion choices
 const (
 	MatchingRuleAssertionMatchingRule = 1
 	MatchingRuleAssertionType         = 2
@@ -65,7 +60,6 @@ const (
 	MatchingRuleAssertionDNAttributes = 4
 )
 
-// MatchingRuleAssertionMap contains human readable descriptions of MatchingRuleAssertion choices
 var MatchingRuleAssertionMap = map[uint64]string{
 	MatchingRuleAssertionMatchingRule: "Matching Rule Assertion Matching Rule",
 	MatchingRuleAssertionType:         "Matching Rule Assertion Type",
@@ -73,7 +67,6 @@ var MatchingRuleAssertionMap = map[uint64]string{
 	MatchingRuleAssertionDNAttributes: "Matching Rule Assertion DN Attributes",
 }
 
-// CompileFilter converts a string representation of a filter into a BER-encoded packet
 func CompileFilter(filter string) (*ber.Packet, error) {
 	if len(filter) == 0 || filter[0] != '(' {
 		return nil, NewError(ErrorFilterCompile, errors.New("ldap: filter does not start with an '('"))
@@ -88,7 +81,6 @@ func CompileFilter(filter string) (*ber.Packet, error) {
 	return packet, nil
 }
 
-// DecompileFilter converts a packet representation of a filter into a string representation
 func DecompileFilter(packet *ber.Packet) (ret string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -247,13 +239,11 @@ func compileFilter(filter string, pos int) (*ber.Packet, int, error) {
 		packet.AppendChild(child)
 		return packet, newPos, err
 	default:
-		const (
-			stateReadingAttr                   = 0
-			stateReadingExtensibleMatchingRule = 1
-			stateReadingCondition              = 2
-		)
+		READING_ATTR := 0
+		READING_EXTENSIBLE_MATCHING_RULE := 1
+		READING_CONDITION := 2
 
-		state := stateReadingAttr
+		state := READING_ATTR
 
 		attribute := ""
 		extensibleDNAttributes := false
@@ -271,56 +261,56 @@ func compileFilter(filter string, pos int) (*ber.Packet, int, error) {
 			}
 
 			switch state {
-			case stateReadingAttr:
+			case READING_ATTR:
 				switch {
 				// Extensible rule, with only DN-matching
 				case currentRune == ':' && strings.HasPrefix(remainingFilter, ":dn:="):
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterExtensibleMatch, nil, FilterMap[FilterExtensibleMatch])
 					extensibleDNAttributes = true
-					state = stateReadingCondition
+					state = READING_CONDITION
 					newPos += 5
 
 				// Extensible rule, with DN-matching and a matching OID
 				case currentRune == ':' && strings.HasPrefix(remainingFilter, ":dn:"):
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterExtensibleMatch, nil, FilterMap[FilterExtensibleMatch])
 					extensibleDNAttributes = true
-					state = stateReadingExtensibleMatchingRule
+					state = READING_EXTENSIBLE_MATCHING_RULE
 					newPos += 4
 
 				// Extensible rule, with attr only
 				case currentRune == ':' && strings.HasPrefix(remainingFilter, ":="):
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterExtensibleMatch, nil, FilterMap[FilterExtensibleMatch])
-					state = stateReadingCondition
+					state = READING_CONDITION
 					newPos += 2
 
 				// Extensible rule, with no DN attribute matching
 				case currentRune == ':':
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterExtensibleMatch, nil, FilterMap[FilterExtensibleMatch])
-					state = stateReadingExtensibleMatchingRule
-					newPos++
+					state = READING_EXTENSIBLE_MATCHING_RULE
+					newPos += 1
 
 				// Equality condition
 				case currentRune == '=':
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterEqualityMatch, nil, FilterMap[FilterEqualityMatch])
-					state = stateReadingCondition
-					newPos++
+					state = READING_CONDITION
+					newPos += 1
 
 				// Greater-than or equal
 				case currentRune == '>' && strings.HasPrefix(remainingFilter, ">="):
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterGreaterOrEqual, nil, FilterMap[FilterGreaterOrEqual])
-					state = stateReadingCondition
+					state = READING_CONDITION
 					newPos += 2
 
 				// Less-than or equal
 				case currentRune == '<' && strings.HasPrefix(remainingFilter, "<="):
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterLessOrEqual, nil, FilterMap[FilterLessOrEqual])
-					state = stateReadingCondition
+					state = READING_CONDITION
 					newPos += 2
 
 				// Approx
 				case currentRune == '~' && strings.HasPrefix(remainingFilter, "~="):
 					packet = ber.Encode(ber.ClassContext, ber.TypeConstructed, FilterApproxMatch, nil, FilterMap[FilterApproxMatch])
-					state = stateReadingCondition
+					state = READING_CONDITION
 					newPos += 2
 
 				// Still reading the attribute name
@@ -329,12 +319,12 @@ func compileFilter(filter string, pos int) (*ber.Packet, int, error) {
 					newPos += currentWidth
 				}
 
-			case stateReadingExtensibleMatchingRule:
+			case READING_EXTENSIBLE_MATCHING_RULE:
 				switch {
 
 				// Matching rule OID is done
 				case currentRune == ':' && strings.HasPrefix(remainingFilter, ":="):
-					state = stateReadingCondition
+					state = READING_CONDITION
 					newPos += 2
 
 				// Still reading the matching rule oid
@@ -343,7 +333,7 @@ func compileFilter(filter string, pos int) (*ber.Packet, int, error) {
 					newPos += currentWidth
 				}
 
-			case stateReadingCondition:
+			case READING_CONDITION:
 				// append to the condition
 				condition += fmt.Sprintf("%c", currentRune)
 				newPos += currentWidth
@@ -379,9 +369,9 @@ func compileFilter(filter string, pos int) (*ber.Packet, int, error) {
 			}
 
 			// Add the value (only required child)
-			encodedString, encodeErr := escapedStringToEncodedBytes(condition)
-			if encodeErr != nil {
-				return packet, newPos, encodeErr
+			encodedString, err := escapedStringToEncodedBytes(condition)
+			if err != nil {
+				return packet, newPos, err
 			}
 			packet.AppendChild(ber.NewString(ber.ClassContext, ber.TypePrimitive, MatchingRuleAssertionMatchValue, encodedString, MatchingRuleAssertionMap[MatchingRuleAssertionMatchValue]))
 
@@ -411,17 +401,17 @@ func compileFilter(filter string, pos int) (*ber.Packet, int, error) {
 				default:
 					tag = FilterSubstringsAny
 				}
-				encodedString, encodeErr := escapedStringToEncodedBytes(part)
-				if encodeErr != nil {
-					return packet, newPos, encodeErr
+				encodedString, err := escapedStringToEncodedBytes(part)
+				if err != nil {
+					return packet, newPos, err
 				}
 				seq.AppendChild(ber.NewString(ber.ClassContext, ber.TypePrimitive, tag, encodedString, FilterSubstringsMap[uint64(tag)]))
 			}
 			packet.AppendChild(seq)
 		default:
-			encodedString, encodeErr := escapedStringToEncodedBytes(condition)
-			if encodeErr != nil {
-				return packet, newPos, encodeErr
+			encodedString, err := escapedStringToEncodedBytes(condition)
+			if err != nil {
+				return packet, newPos, err
 			}
 			packet.AppendChild(ber.NewString(ber.ClassUniversal, ber.TypePrimitive, ber.TagOctetString, attribute, "Attribute"))
 			packet.AppendChild(ber.NewString(ber.ClassUniversal, ber.TypePrimitive, ber.TagOctetString, encodedString, "Condition"))
@@ -450,12 +440,12 @@ func escapedStringToEncodedBytes(escapedString string) (string, error) {
 			if i+2 > len(escapedString) {
 				return "", NewError(ErrorFilterCompile, errors.New("ldap: missing characters for escape in filter"))
 			}
-			escByte, decodeErr := hexpac.DecodeString(escapedString[i+1 : i+3])
-			if decodeErr != nil {
+			if escByte, decodeErr := hexpac.DecodeString(escapedString[i+1 : i+3]); decodeErr != nil {
 				return "", NewError(ErrorFilterCompile, errors.New("ldap: invalid characters for escape in filter"))
+			} else {
+				buffer.WriteByte(escByte[0])
+				i += 2 // +1 from end of loop, so 3 total for \xx.
 			}
-			buffer.WriteByte(escByte[0])
-			i += 2 // +1 from end of loop, so 3 total for \xx.
 		} else {
 			buffer.WriteRune(currentRune)
 		}
@@ -463,4 +453,80 @@ func escapedStringToEncodedBytes(escapedString string) (string, error) {
 		i += currentWidth
 	}
 	return buffer.String(), nil
+}
+
+
+func ServerApplyFilter(f *ber.Packet, entry *Entry) (bool, uint8) {
+	switch FilterMap[uint64(f.Tag)] {
+	default:
+		//log.Fatalf("Unknown LDAP filter code: %d", f.Tag)
+		return false, LDAPResultOperationsError
+	case "Equality Match":
+		if len(f.Children) != 2 {
+			return false, LDAPResultOperationsError
+		}
+		attribute := f.Children[0].Value.(string)
+		value := f.Children[1].Value.(string)
+		for _, a := range entry.Attributes {
+			if strings.ToLower(a.Name) == strings.ToLower(attribute) {
+				for _, v := range a.Values {
+					if strings.ToLower(v) == strings.ToLower(value) {
+						return true, LDAPResultSuccess
+					}
+				}
+			}
+		}
+	case "Present":
+		for _, a := range entry.Attributes {
+			if strings.ToLower(a.Name) == strings.ToLower(f.Data.String()) {
+				return true, LDAPResultSuccess
+			}
+		}
+	case "And":
+		for _, child := range f.Children {
+			ok, exitCode := ServerApplyFilter(child, entry)
+			if exitCode != LDAPResultSuccess {
+				return false, exitCode
+			}
+			if !ok {
+				return false, LDAPResultSuccess
+			}
+		}
+		return true, LDAPResultSuccess
+	case "Or":
+		anyOk := false
+		for _, child := range f.Children {
+			ok, exitCode := ServerApplyFilter(child, entry)
+			if exitCode != LDAPResultSuccess {
+				return false, exitCode
+			} else if ok {
+				anyOk = true
+			}
+		}
+		if anyOk {
+			return true, LDAPResultSuccess
+		}
+	case "Not":
+		if len(f.Children) != 1 {
+			return false, LDAPResultOperationsError
+		}
+		ok, exitCode := ServerApplyFilter(f.Children[0], entry)
+		if exitCode != LDAPResultSuccess {
+			return false, exitCode
+		} else if !ok {
+			return true, LDAPResultSuccess
+		}
+	case "FilterSubstrings": // TODO
+		return false, LDAPResultOperationsError
+	case "FilterGreaterOrEqual": // TODO
+		return false, LDAPResultOperationsError
+	case "FilterLessOrEqual": // TODO
+		return false, LDAPResultOperationsError
+	case "FilterApproxMatch": // TODO
+		return false, LDAPResultOperationsError
+	case "FilterExtensibleMatch": // TODO
+		return false, LDAPResultOperationsError
+	}
+
+	return false, LDAPResultSuccess
 }

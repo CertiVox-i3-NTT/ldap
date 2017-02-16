@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"testing"
 
-	"gopkg.in/ldap.v2"
+	"../ldap"
 )
 
-var ldapServer = "ldap.itd.umich.edu"
+var ldapServer = "db.debian.org"
 var ldapPort = uint16(389)
 var ldapTLSPort = uint16(636)
-var baseDN = "dc=umich,dc=edu"
+var baseDN = "dc=debian,dc=org"
 var filter = []string{
-	"(cn=cis-fac)",
-	"(&(owner=*)(cn=cis-fac))",
-	"(&(objectclass=rfc822mailgroup)(cn=*Computer*))",
-	"(&(objectclass=rfc822mailgroup)(cn=*Mathematics*))"}
+	"(cn=Debian QA)",
+	"(&(uid=*)(cn=Debian QA))",
+	"(&(objectclass=debianServer)(hostname=*debian*))",
+	"(&(objectclass=debianAccount)(cn=*user*))"}
 var attributes = []string{
 	"cn",
 	"description"}
@@ -151,32 +151,6 @@ func TestSearchWithPaging(t *testing.T) {
 	}
 
 	fmt.Printf("TestSearchWithPaging: %s -> num of entries = %d\n", searchRequest.Filter, len(sr.Entries))
-
-	searchRequest = ldap.NewSearchRequest(
-		baseDN,
-		ldap.ScopeWholeSubtree, ldap.DerefAlways, 0, 0, false,
-		filter[2],
-		attributes,
-		[]ldap.Control{ldap.NewControlPaging(5)})
-	sr, err = l.SearchWithPaging(searchRequest, 5)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
-	}
-
-	fmt.Printf("TestSearchWithPaging: %s -> num of entries = %d\n", searchRequest.Filter, len(sr.Entries))
-
-	searchRequest = ldap.NewSearchRequest(
-		baseDN,
-		ldap.ScopeWholeSubtree, ldap.DerefAlways, 0, 0, false,
-		filter[2],
-		attributes,
-		[]ldap.Control{ldap.NewControlPaging(500)})
-	sr, err = l.SearchWithPaging(searchRequest, 5)
-	if err == nil {
-		t.Errorf("expected an error when paging size in control in search request doesn't match size given in call, got none")
-		return
-	}
 }
 
 func searchGoroutine(t *testing.T, l *ldap.Conn, results chan *ldap.SearchResult, i int) {
@@ -251,6 +225,9 @@ func TestEscapeFilter(t *testing.T) {
 	if got, want := ldap.EscapeFilter("Lučić"), `Lu\c4\8di\c4\87`; got != want {
 		t.Errorf("Got %s, expected %s", want, got)
 	}
+	if got, want := ldap.EscapeFilter("日本語でおk"), `\e6\97\a5\e6\9c\ac\e8\aa\9e\e3\81\a7\e3\81\8ak`; got != want {
+		t.Errorf("Got %s, expected %s", want, got)
+	}
 }
 
 func TestCompare(t *testing.T) {
@@ -261,9 +238,9 @@ func TestCompare(t *testing.T) {
 	}
 	defer l.Close()
 
-	dn := "cn=math mich,ou=User Groups,ou=Groups,dc=umich,dc=edu"
+	dn := "uid=qa,ou=users,dc=debian,dc=org"
 	attribute := "cn"
-	value := "math mich"
+	value := "Debian QA"
 
 	sr, err := l.Compare(dn, attribute, value)
 	if err != nil {
@@ -272,4 +249,29 @@ func TestCompare(t *testing.T) {
 	}
 
 	fmt.Printf("TestCompare: -> %v\n", sr)
+}
+
+
+func TestCompareFalse(t *testing.T) {
+	fmt.Printf("TestCompare: starting...\n")
+	l, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", ldapServer, ldapPort))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer l.Close()
+
+	dn := "uid=qa,ou=users,dc=debian,dc=org"
+	attribute := "cn"
+	value := "foobar"
+
+	sr, err := l.Compare(dn, attribute, value)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if sr != false {
+		t.Error("TestCompareFalse: Result should be false.")
+	}
+
+	fmt.Printf("TestCompareFalse: -> %v\n", sr)
 }
