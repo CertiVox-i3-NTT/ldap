@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"../asn1-ber"
+	"github.com/mulodo-japan/milagro-asn1-ber"
 )
 
 const (

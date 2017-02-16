@@ -3,7 +3,7 @@ package ldap
 import (
 	"log"
 
-	"../asn1-ber"
+	"github.com/mulodo-japan/milagro-asn1-ber"
 )
 
 // debbuging type

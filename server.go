@@ -3,7 +3,7 @@ package ldap
 import (
 	"crypto/tls"
 //	"github.com/nmcclain/asn1-ber"
-	"../asn1-ber"
+	"github.com/mulodo-japan/milagro-asn1-ber"
 	//"gopkg.in/ldap.v2"
 	"io"
 	"log"

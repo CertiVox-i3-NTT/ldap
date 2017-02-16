@@ -52,7 +52,7 @@ import (
 	"fmt"
 	"strings"
 
-	ber "../asn1-ber"
+	ber "github.com/mulodo-japan/milagro-asn1-ber"
 )
 
 type AttributeTypeAndValue struct {
