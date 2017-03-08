@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/mulodo-japan/milagro-asn1-ber"
-	"../ldap"
+	"github.com/mulodo-japan/milagro-ldap"
 )
 
 type compileTest struct {

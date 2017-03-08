@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"../ldap"
+	"github.com/mulodo-japan/milagro-ldap"
 )
 
 func TestSuccessfulDNParsing(t *testing.T) {

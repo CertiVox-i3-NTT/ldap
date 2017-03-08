@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"../ldap"
+	"github.com/mulodo-japan/milagro-ldap"
 )
 
 // ExampleConn_Bind demonstrates how to bind a connection to an ldap user
