@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mulodo-japan/milagro-ldap"
+	"github.com/CertiVox-i3-NTT/ldap"
 )
 
 var ldapServer = "db.debian.org"

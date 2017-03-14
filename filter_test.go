@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mulodo-japan/milagro-asn1-ber"
-	"github.com/mulodo-japan/milagro-ldap"
+	"github.com/CertiVox-i3-NTT/asn1-ber"
+	"github.com/CertiVox-i3-NTT/ldap"
 )
 
 type compileTest struct {

@@ -3,7 +3,7 @@ package ldap
 import (
 	"fmt"
 
-	"github.com/mulodo-japan/milagro-asn1-ber"
+	"github.com/CertiVox-i3-NTT/asn1-ber"
 )
 
 // LDAP Result Codes

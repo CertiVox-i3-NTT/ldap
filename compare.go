@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mulodo-japan/milagro-asn1-ber"
+	"github.com/CertiVox-i3-NTT/asn1-ber"
 )
 
 // Compare checks to see if the attribute of the dn matches value. Returns true if it does otherwise

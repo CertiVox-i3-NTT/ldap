@@ -7,7 +7,7 @@ package ldap
 import (
 	"errors"
 
-	"github.com/mulodo-japan/milagro-asn1-ber"
+	"github.com/CertiVox-i3-NTT/asn1-ber"
 )
 
 type SimpleBindRequest struct {

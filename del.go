@@ -9,7 +9,7 @@ import (
 	"errors"
 	"log"
 
-	"github.com/mulodo-japan/milagro-asn1-ber"
+	"github.com/CertiVox-i3-NTT/asn1-ber"
 )
 
 type DelRequest struct {

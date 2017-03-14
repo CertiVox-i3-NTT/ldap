@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mulodo-japan/milagro-ldap"
+	"github.com/CertiVox-i3-NTT/ldap"
 )
 
 // ExampleConn_Bind demonstrates how to bind a connection to an ldap user

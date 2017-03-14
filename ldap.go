@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	ber "github.com/mulodo-japan/milagro-asn1-ber"
+	ber "github.com/CertiVox-i3-NTT/asn1-ber"
 )
 
 // LDAP Application Codes
